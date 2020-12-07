@@ -31,26 +31,9 @@ function start() {
     "Update Employee Role"]
   }).then(function({initialize}) {
     if(initialize === "View All Employees") {
-      let query = `SELECT employee.id, employee.first_name AS first, employee.last_name AS last, role.title, department.name, role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager
-      FROM employee
-      LEFT JOIN role ON employee.role_id=role.id
-      LEFT JOIN department ON department_id=department.id
-      LEFT JOIN employee AS manager ON employee.manager_id=manager.id
-      ORDER BY employee.id;`;
-      connection.query(query, function(err, res){
-        if(err) throw err;
-        console.table(res);
-        start();
-      });
+      viewAllEmployees();
     } else if(initialize === "View All Roles") {
-      let query = `SELECT title, salary, department.name as department
-      FROM role
-      LEFT JOIN department ON role.department_id=department.id`;
-      connection.query(query, function(err, res) {
-        if(err) throw err;
-        console.table(res);
-        start();
-      });
+      viewAllRoles();
     } else if(initialize === "View All Departments") {
       viewAllDepartments();
     } else if(initialize === "View All Employees By Department") {
@@ -59,9 +42,6 @@ function start() {
       viewEmployeesByManager();
     } else if(initialize === "Add Employee") {
       addEmployee(getEmployeeRoles(), getManagers());
-      // query = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-      // VALUES (?, ?, ?, ?)`;
-      // connection.query(query, )
     } else if(initialize === "Add Role") {
 
     } else if(initialize === "Add Department") {
@@ -71,6 +51,31 @@ function start() {
     }
   });
 };
+
+function viewAllEmployees() {
+  let query = `SELECT employee.id, employee.first_name AS first, employee.last_name AS last, role.title, department.name, role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager
+  FROM employee
+  LEFT JOIN role ON employee.role_id=role.id
+  LEFT JOIN department ON department_id=department.id
+  LEFT JOIN employee AS manager ON employee.manager_id=manager.id
+  ORDER BY employee.id;`;
+  connection.query(query, function(err, res){
+    if(err) throw err;
+    console.table(res);
+    start();
+  });
+}
+
+function viewAllRoles() {
+  let query = `SELECT title, salary, department.name as department
+  FROM role
+  LEFT JOIN department ON role.department_id=department.id`;
+  connection.query(query, function(err, res) {
+    if(err) throw err;
+    console.table(res);
+    start();
+  });
+}
 
 function viewAllDepartments() {
   let query = `SELECT name AS department FROM department`;
@@ -133,6 +138,11 @@ function addEmployee(roles, managers) {
       message: "Who is their manager?",
       choices: managers
     }]).then(function({firstName, lastName, role, manager}) {
+      let role_id = searchForSpecificRole(role);
+      query = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+      VALUES (?, ?, ?, ?)`;
+      console.log(role_id + " line 145")
+      // connection.query(query, [firstName, lastName, role_id, ])
       console.log(firstName);
       console.log(lastName);
       console.log(role);
@@ -179,7 +189,12 @@ function getManagers() {
   return filteredManagers;
 }
 
-
-// function addEmployeeQuestions {
-
-// }
+function searchForSpecificRole(role) {
+  let query = `SELECT role.id FROM role WHERE title = ?`;
+  let role_id = 0;
+  connection.query(query, [role], function(err, res) {
+    if(err) throw err;
+    role_id = res[0].id;
+  });
+  return role_id;
+}
