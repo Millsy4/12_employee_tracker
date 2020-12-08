@@ -1,7 +1,5 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-const express = require("express");
-// const employeeQueries = require("./employeeQueries");
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -44,11 +42,11 @@ function start() {
     } else if(initialize === "Add Employee") {
       addEmployee(getEmployeeRoles(), getManagers());
     } else if(initialize === "Add Role") {
-
+      addRole(getDepartments());
     } else if(initialize === "Add Department") {
-
+      addDepartment();
     } else if(initialize === "Update Employee Role") {
-
+      updateEmployeeRole(getEmployees(), getEmployeeRoles());
     }
   });
 };
@@ -151,7 +149,7 @@ function addEmployee(roles, managers) {
     });
 }
 
-function addRole(departments, managers) {
+function addRole(departments) {
   inquirer.prompt([
     {
       name: "title",
@@ -161,26 +159,34 @@ function addRole(departments, managers) {
     {
       name: "salary",
       type: "input",
-      message: "What is the salary of this role?",
+      message: "What is the salary of this role? (Use ###.## format)",
     },
     {
       name: "department",
       type: "list",
       message: "Which department will this be apart of?",
       choices: departments
-    },
+    }]).then(function({title, salary, department}) {
+      query = `INSERT INTO role (title, salary, department_id)
+      VALUES (?, ?, ?)`;
+      let department_id = department.split(', ')[1];
+      connection.query(query, [title, salary, department_id], function(err, res) {
+        if(err) throw err;
+        start();
+      });
+    });
+}
+
+function addDepartment() {
+  inquirer.prompt([
     {
-      name: "manager",
-      type: "list",
-      message: "Who is their manager?",
-      choices: managers
-    }]).then(function({firstName, lastName, role, manager}) {
-      // let role_id = searchForSpecificRole(role);
-      query = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
-      VALUES (?, ?, ?, ?)`;
-      let role_id = role.split(', ')[1];
-      let manager_id = manager.split(', ')[1];
-      connection.query(query, [firstName, lastName, role_id, manager_id], function(err, res) {
+      name: "name",
+      type: "input",
+      message: "What is the name of this department?",
+    }]).then(function({name}) {
+      query = `INSERT INTO department (name)
+      VALUES (?)`;
+      connection.query(query, [name], function(err, res) {
         if(err) throw err;
         start();
       });
@@ -199,6 +205,19 @@ function getEmployeeRoles() {
     });
   });
   return roles;
+}
+
+function getDepartments() {
+  let query = `SELECT department.id, department.name
+  FROM department`
+  let departments = [];
+  connection.query(query, function(err, res) {
+    if(err) throw err;
+    res.forEach(department => {
+      departments.push(`${department.name}, ${department.id}`);
+    });
+  });
+  return departments;
 }
 
 function getManagers() {
@@ -226,12 +245,51 @@ function getManagers() {
   return filteredManagers;
 }
 
-function searchForSpecificRole(role) {
-  let query = `SELECT role.id FROM role WHERE title = ?`;
-  let role_id;
-  return connection.query(query, [role], function(err, res) {
+function getEmployees() {
+  let query = `SELECT employee.id, employee.first_name, employee.last_name
+  FROM employee`;
+  let employees = [];
+  connection.query(query, function(err, res) {
     if(err) throw err;
-    role_id = res[0].id;
-    return role_id;
+    res.forEach(employee => {
+      employees.push(`${employee.first_name}, ${employee.last_name}, ${employee.id}`);
+    });
+  });
+  console.log(employees);
+  return employees;
+}
+
+function updateEmployeeRole(employees, roles) {
+  inquirer.prompt([
+    {
+      name: "yesOrNo",
+      type: "confirm",
+      message: "Are you sure you want to change the employee role? (If no, it won't add the information after)."
+    },
+    {
+      name: "employee",
+      type: "list",
+      message: "Which employee would you like to change?",
+      choices: employees
+    },
+    {
+      name: "role",
+      type: "list",
+      message: "Which role would you like them to have?",
+      choices: roles
+    }]).then(function( {yesOrNo, employee, role} ) {
+      let employee_id = employee.split(', ')[2];
+      let role_id = role.split(', ')[1];
+      if(yesOrNo === true) {
+        query = `UPDATE employee
+        SET role_id = ?
+        WHERE id = ?`;
+        connection.query(query, [role_id, employee_id], function(err, res) {
+          if(err) throw err;
+          start();
+        });
+      } else {
+        start();
+      }
   });
 }
