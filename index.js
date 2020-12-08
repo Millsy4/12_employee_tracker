@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const express = require("express");
 // const employeeQueries = require("./employeeQueries");
 
 var connection = mysql.createConnection({
@@ -67,7 +68,7 @@ function viewAllEmployees() {
 }
 
 function viewAllRoles() {
-  let query = `SELECT title, salary, department.name as department
+  let query = `SELECT role.id, title, salary, department.name as department
   FROM role
   LEFT JOIN department ON role.department_id=department.id`;
   connection.query(query, function(err, res) {
@@ -138,46 +139,82 @@ function addEmployee(roles, managers) {
       message: "Who is their manager?",
       choices: managers
     }]).then(function({firstName, lastName, role, manager}) {
-      let role_id = searchForSpecificRole(role);
+      // let role_id = searchForSpecificRole(role);
       query = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
       VALUES (?, ?, ?, ?)`;
-      console.log(role_id + " line 145")
-      // connection.query(query, [firstName, lastName, role_id, ])
-      console.log(firstName);
-      console.log(lastName);
-      console.log(role);
-      console.log(manager);
+      let role_id = role.split(', ')[1];
+      let manager_id = manager.split(', ')[1];
+      connection.query(query, [firstName, lastName, role_id, manager_id], function(err, res) {
+        if(err) throw err;
+        start();
+      });
+    });
+}
+
+function addRole(departments, managers) {
+  inquirer.prompt([
+    {
+      name: "title",
+      type: "input",
+      message: "What is the title of the role?",
+    },
+    {
+      name: "salary",
+      type: "input",
+      message: "What is the salary of this role?",
+    },
+    {
+      name: "department",
+      type: "list",
+      message: "Which department will this be apart of?",
+      choices: departments
+    },
+    {
+      name: "manager",
+      type: "list",
+      message: "Who is their manager?",
+      choices: managers
+    }]).then(function({firstName, lastName, role, manager}) {
+      // let role_id = searchForSpecificRole(role);
+      query = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+      VALUES (?, ?, ?, ?)`;
+      let role_id = role.split(', ')[1];
+      let manager_id = manager.split(', ')[1];
+      connection.query(query, [firstName, lastName, role_id, manager_id], function(err, res) {
+        if(err) throw err;
+        start();
+      });
     });
 }
 
 function getEmployeeRoles() {
-  let query = `SELECT title, salary, department.name as department
+  let query = `SELECT role.id, title, salary, department.name as department
   FROM role
   LEFT JOIN department ON role.department_id=department.id`;
   let roles = [];
   connection.query(query, function(err, res) {
     if(err) throw err;
     res.forEach(role => {
-      roles.push(role.title);
+      roles.push(`${role.title}, ${role.id}`);
     });
   });
   return roles;
 }
 
 function getManagers() {
-  let query = `SELECT employee.id, employee.first_name AS first, employee.last_name AS last, role.title, department.name, role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager
+  let query = `SELECT employee.id, employee.first_name AS first, employee.last_name AS last, role.title, department.name, role.salary, manager.id AS manid, CONCAT(manager.first_name, " ", manager.last_name) AS manager
   FROM employee
   LEFT JOIN role ON employee.role_id=role.id
   LEFT JOIN department ON department_id=department.id
   LEFT JOIN employee AS manager ON employee.manager_id=manager.id
   ORDER BY manager.id;`;
-  let managers = ['None'];
+  let managers = ['None, NULL'];
   let filteredManagers = [];
   connection.query(query, function(err, res) {
     if(err) throw err;
     res.forEach(employee => {
       if(employee.manager != null) {
-        managers.push(employee.manager);
+        managers.push(`${employee.manager}, ${employee.manid}`);
       }
     });
     managers.forEach(manager => {
@@ -191,10 +228,10 @@ function getManagers() {
 
 function searchForSpecificRole(role) {
   let query = `SELECT role.id FROM role WHERE title = ?`;
-  let role_id = 0;
-  connection.query(query, [role], function(err, res) {
+  let role_id;
+  return connection.query(query, [role], function(err, res) {
     if(err) throw err;
     role_id = res[0].id;
+    return role_id;
   });
-  return role_id;
 }
