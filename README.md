@@ -51,3 +51,6 @@ Currently there are no tests setup for this program.
   
 If you have any questions about the repo, open an issue or contact me directly at *millsy4@hotmail.com*.
 You can find more of my work at [Millsy4](https://github.com/Millsy4/).
+
+## **Screenshots**
+![Screenshot of Program](./assets/images/app_screenshot.png)
