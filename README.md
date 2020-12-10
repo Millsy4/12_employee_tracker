@@ -4,7 +4,7 @@
 ## **Description**
 ![Github License](https://img.shields.io/badge/License-MIT-green)
 
-This project was created to allow people to create and delete notes when they finish them.  The idea is for it to be similar to a to do list, but the main objective was to learn about express servers and understanding how to create and host our own servers.
+This project was created to learn about interacting with MySQL databases using a node server, as well as to learn MySQL itself.  With this project you can create, update, and later remove employees, their roles, and the departments of your company (after I go back and implement it).
   
 ## **Table of Contents**
   
@@ -28,7 +28,7 @@ To install necessary dependencies, run the following command:
   
 ## **Usage**
   
-To use this program, open the Heroku based site and you will be shown a list based on anything you placed in the note list previously.  If you wish to add a note, you simply fill in the Title and Text fields and then click the Save (floppy disk) icon after you're finished, this will save your note to the list field on the left.  If you wish to view that note again, all you have to do is click on the note off to the left side to pull it's information up.  If you wish to delete the note, then simply click the trash can icon off to the right of the note and it will be removed from the list.
+To use this program, you must have all the dependencies installed, which are located in the package.json.  After you have those installed, you must also have the database setup on your MySQL, so you should take the schema.sql file and copy and paste that into your MySQL.  After that, you should seed your MySQL with some starter information for at least the roles and departments tables, starting with the departments, then roles, then add employees after.  Once you've completed setting up your database, you should then come back to your index.js file, open it in an integrated terminal and run 'node index.js'.  This will then start the program and begin to prompt you through sets of questions depending on what you wish to update or add to your database.
   
 ## **License**
   
